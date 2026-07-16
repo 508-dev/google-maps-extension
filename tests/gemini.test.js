@@ -1500,21 +1500,28 @@ describe("Gemini Component", () => {
     });
 
     test("should handle clearExpiredSummary with exactly 24 hours", async () => {
-      const exactTimestamp = Date.now() - 86400 * 1000;
+      const now = Date.now();
+      const dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(now);
 
-      mockChromeStorage({
-        summaryList: [{ name: "Place", clue: "" }],
-        timestamp: exactTimestamp,
-        favoriteList: [],
-      });
+      try {
+        const exactTimestamp = now - 86400 * 1000;
 
-      geminiInstance.clearExpiredSummary();
+        mockChromeStorage({
+          summaryList: [{ name: "Place", clue: "" }],
+          timestamp: exactTimestamp,
+          favoriteList: [],
+        });
 
-      // Wait for the async storage callback to complete
-      await flushPromises();
+        geminiInstance.clearExpiredSummary();
 
-      // Should not clear (exactly 24 hours is still valid - elapsedTime > 86400 is false)
-      expect(state.hasSummary).toBe(true);
+        // Wait for the async storage callback to complete
+        await flushPromises();
+
+        // Should not clear (exactly 24 hours is still valid - elapsedTime > 86400 is false)
+        expect(state.hasSummary).toBe(true);
+      } finally {
+        dateNowSpy.mockRestore();
+      }
     });
 
     test("should handle video summary requests", async () => {
